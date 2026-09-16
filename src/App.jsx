@@ -210,6 +210,8 @@ function buildChunkPrompt({ goal, index, total, prev, chunk }) {
 ${prev ? `ここまでに分かっていること:\n${prev}\n` : ""}
 # 守ること
 - 発言にある事実だけを書く。推測で補わない。
+- 日付・期限・数値は、発言にある表現をそのまま写す。「今月中」「来週」などの言い方も変換せず、言われたままで書く。
+- 固有名詞（人名・地名・団体名・商品名）は、聞き取りの誤変換に見えても勝手に直さない。発言どおりに写す。
 - 「決まったこと」「理由」「採らなかった案とその理由」「宿題」「保留」に当たる発言を優先して拾う。
 - 雑談や言い直しは捨てる。
 - 15行以内。1行1項目。説明や前置きはつけず、箇条書きだけを返す。
@@ -256,6 +258,8 @@ ${notes}
 
 # 守ること
 - 記録にある事実だけを書く。推測で補わない。
+- 日付・期限・数値は、記録にある表現をそのまま使う。記録より先の日付や、切りのよい日付に言い換えない。記録にない期限は書かない。
+- 固有名詞は記録のとおりに書く。誤変換に見えても直さない。
 - 同じ内容が重複していたらひとつにまとめる。
 ${s.rule}
 
@@ -277,6 +281,8 @@ ${JSON.stringify(core, null, 1)}
 # 守ること
 - lineSummary はLINEにそのまま貼る。10行以内。記号やマークダウンは使わない。箇条書きは数字と中黒のみ。
 - 担当が記録から読み取れない場合は「未確定」と書く。勝手に人名を割り当てない。
+- 期限が記録から読み取れない場合は「期限の記載なし」と書く。日付を推測して埋めない。
+- 日付・期限・数値・固有名詞は、記録にある表現をそのまま使う。言い換えたり直したりしない。
 - 記録にない事実を足さない。
 
 # 出力
@@ -288,7 +294,8 @@ ${JSON.stringify(core, null, 1)}
   "lineSummary": "LINEに貼る短い版。改行込みのプレーンテキスト",
   "nextGoal": "次回のゴール案を1行",
   "nextActions": [{"who": "担当", "when": "期限", "what": "やること"}],
-  "saveData": "次回の冒頭で全員が思い出すべき前提を3〜5文"
+  "saveData": "次回の冒頭で全員が思い出すべき前提を3〜5文",
+  "checkPoints": ["人が確認すべき箇所。記録があいまいだった日付・期限・担当・固有名詞を、理由を添えて1行ずつ。なければ空の配列"]
 }`;
 }
 
@@ -755,6 +762,34 @@ export default function MeetingNotes() {
               </div>
               <div style={S.lineBox}>{result.lineSummary}</div>
             </div>
+            )}
+
+            {result.checkPoints?.length > 0 && (
+              <div
+                style={{
+                  ...S.card,
+                  borderLeft: `3px solid ${markerRed}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 700,
+                    color: markerRed,
+                    marginBottom: 4,
+                  }}
+                >
+                  貼る前に確認してください
+                </div>
+                <div style={{ fontSize: 12, color: dim, marginBottom: 10 }}>
+                  記録があいまいだった箇所です。日付や名前が違っていないか見てください。
+                </div>
+                {result.checkPoints.map((c, i) => (
+                  <div key={i} style={{ ...S.item, marginBottom: 8 }}>
+                    ・{c}
+                  </div>
+                ))}
+              </div>
             )}
 
             <div style={S.card}>
